@@ -1,4 +1,3 @@
-
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include <stdio.h>
@@ -14,7 +13,6 @@ void fill(int r, int c, int* o) {
     /*
         Fills matrix with r rows and c columns.
         Generates matrix in a 1D form.
-
         ct variable is used to change the seed for randomizing.
         Calling this function twice without it will cause both arrays
         to be filled with the same values.
@@ -33,7 +31,7 @@ void print(int r, int c, int* o) {
         Will print out the matrix given r rows and c columns.
         Assumes the matrix is stored as a 1D array.
     */
-    
+
     for (int i = 0; i < r; i++) {
         for (int j = 0; j < c; j++) {
             cout << o[i * c + j] << " ";
@@ -50,22 +48,21 @@ __global__ void mult_2_matrix(int* a, int* b, int* c, int a_r, int a_c, int b_r,
 
     c[row * b_c + col] = 0;
 
-    while(row < a_r && col < b_c ) {
-        
+    while (row < a_r && col < b_c) {
+
         for (int k = 0; k < a_c; k++) {
             c[row * b_c + col] += a[row * a_c + k] * b[k * b_c + col];
-            //printf("(ROW %d, COL %d)\n", row, col);
         }
 
         row += gridDim.y * blockDim.y;
         //col += gridDim.x * blockDim.x;
+        
     }
+
+
 }
 
-// m x n 
-// n x p
-
-void verify(int* mat1,int mat1_m, int mat1_n, int mat2_n, int mat2_p, int* mat2, int* output) {
+void verify(int* mat1, int mat1_m, int mat1_n, int mat2_n, int mat2_p, int* mat2, int* output) {
     /*
         Multiplies two matricies together.
         This function assumes that the 2 matricies are
@@ -79,14 +76,16 @@ void verify(int* mat1,int mat1_m, int mat1_n, int mat2_n, int mat2_p, int* mat2,
             }
             output[i * mat2_p + j] = sum;
         }
+
+        
     }
-    
+
 }
 
-int main(){
-    int* a, a_r, a_c, a_n, *dev_a;
-    int* b, b_r, b_c, b_n, *dev_b;
-    int* c, c_n, *dev_c;
+int main() {
+    int* a, a_r, a_c, a_n, * dev_a;
+    int* b, b_r, b_c, b_n, * dev_b;
+    int* c, c_n, * dev_c;
 
     cout << "Please enter rows and cols for matrix 1: ";
     cin >> a_r >> a_c;
@@ -105,15 +104,15 @@ int main(){
 
     fill(a_r, a_c, a);
     fill(b_r, b_c, b);
-   /* cout << endl;
-    print(a_r, a_c, a);
-    cout << endl;
-    print(b_r, b_c, b);*/
-   /* for (int i = 0; i < a_r; i++) {
-        for (int j = 0; j < b_c; j++) {
-            c[i * b_c + j] = 0;
-        }
-    }*/
+     //cout << endl;
+     //print(a_r, a_c, a);
+     //cout << endl;
+     //print(b_r, b_c, b);
+      /*for (int i = 0; i < a_r; i++) {
+          for (int j = 0; j < b_c; j++) {
+              c[i * b_c + j] = 0;
+          }
+      }*/
 
     cudaMalloc(&dev_a, a_n * sizeof(int));
     cudaMalloc(&dev_b, b_n * sizeof(int));
@@ -125,13 +124,10 @@ int main(){
     cudaMemcpy(dev_c, c, c_n * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(dev_col, &a_c, sizeof(int), cudaMemcpyHostToDevice);
 
-    // fix
-    dim3 thread(32, 32, 1);
-    dim3 blocks(10, 10, 1);
 
-    mult_2_matrix << < (threads + c_n-1)/1024, thread >> > (dev_a, dev_b, dev_c, a_r, a_c, b_r, b_c, c_n);
-    
-    
+    mult_2_matrix << < (c_n * 1023)/1024, threads >> > (dev_a, dev_b, dev_c, a_r, a_c, b_r, b_c, c_n);
+
+
 
     cudaMemcpy(c, dev_c, c_n * sizeof(int), cudaMemcpyDeviceToHost);
 
@@ -139,11 +135,11 @@ int main(){
     int* ver = new int[c_n];
     verify(a, a_r, a_c, b_r, b_c, b, ver);
 
-   //printf("ANSWER: \n");
-   // print(a_r, b_c, ver);
+    /*printf("ANSWER: \n");
+     print(a_r, b_c, ver);
 
-    //printf("GOT: \n");
-    //print(a_r, b_c, c);
+     printf("GOT: \n");
+     print(a_r, b_c, c);*/
 
     for (int i = 0; i < c_n; i++) {
         if (c[i] != ver[i]) {
