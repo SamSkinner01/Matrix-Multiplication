@@ -1,4 +1,3 @@
-
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include <stdio.h>
@@ -45,8 +44,7 @@ void print(int r, int c, int* o) {
 void verify(int* a,int a_r, int a_c, int b_r, int b_c, int* b, int* output) {
     /*
         Multiplies two matricies together.
-        This function assumes that the 2 matricies are
-        stored as a 1D array.
+        Used to verify the parallel code
     */
     for (int i = 0; i < a_r; i++) {
         for (int j = 0; j < b_c; j++) {
@@ -61,8 +59,11 @@ void verify(int* a,int a_r, int a_c, int b_r, int b_c, int* b, int* output) {
 }
 
 __global__ void matrixMult(int*a, int a_r, int a_c, int b_r, int b_c, int* b, int* output) {
+    /*
+    Multiplies 2 matrices together 
+    */
     int row = threadIdx.y + blockIdx.y * blockDim.y;
-    int col = threadIdx.x + blockIdx.x * blockDim.y;
+    int col = threadIdx.x + blockIdx.x * blockDim.x;
     
     if (row < a_r && col < b_c) {
         int sum = 0;
